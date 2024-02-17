@@ -8,7 +8,7 @@ import (
 type Category struct {
 	orm.Model
 	Id        int
-	Name      string
+	Name      string `form:"name" binding:"required"`
 	CreatedAt time.Time
 	orm.SoftDeletes
 }

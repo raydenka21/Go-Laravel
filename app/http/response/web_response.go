@@ -2,13 +2,13 @@ package response
 
 import "github.com/goravel/framework/contracts/http"
 
-func ApiResponse(writer http.Context, statusCode int, response interface{}, messages string) http.Response {
+func ApiResponse(writer http.Context, statusCode int, response interface{}, messages interface{}) http.Response {
 	var status string
 	status = "success"
 	if statusCode != 200 {
 		status = "failed"
 	}
-	if statusCode == 200 && messages == "" {
+	if statusCode > 200 || statusCode < 300 && messages == "" {
 		messages = "success"
 		status = "success"
 	} else if statusCode == 201 && messages == "" {

@@ -19,15 +19,24 @@ func NewCategoryController() *CategoryController {
 }
 
 func (r *CategoryController) Index(ctx http.Context) http.Response {
+	start := ctx.Request().QueryInt("start")
+	limit := ctx.Request().QueryInt("limit")
+	if limit > 100 {
+		limit = 100
+	} else if limit < 1 {
+		limit = 10
+	}
 	var category []models.Category
-	err := facades.Orm().Query().Get(&category)
+
+	err := facades.Orm().Query().Offset(start).Limit(limit).Get(&category)
+	//fmt.Println(total)
 	var createCategories []response.CategoryResponse
 	if err != nil {
 		facades.Log().Debug(err)
 		return response.ApiResponse(ctx, 500, createCategories, "")
 	}
 	detailResponse := response.ToCategoryResponseAll(category)
-	return response.ApiResponse(ctx, 200, detailResponse, "")
+	return response.ApiResponse(ctx, 200, detailResponse, "Get All Category")
 }
 
 func (r *CategoryController) Show(ctx http.Context) http.Response {
@@ -43,6 +52,13 @@ func (r *CategoryController) Show(ctx http.Context) http.Response {
 }
 
 func (r *CategoryController) Store(ctx http.Context) http.Response {
+	validator, _ := ctx.Request().Validate(map[string]string{
+		"name": "required|max_len:50",
+	})
+	if validator.Fails() {
+		messages := validator.Errors().All()
+		return response.ApiResponse(ctx, 400, messages, "")
+	}
 	name := ctx.Request().Input("name")
 	category := models.Category{Name: name}
 	err := facades.Orm().Query().Create(&category)
@@ -50,10 +66,18 @@ func (r *CategoryController) Store(ctx http.Context) http.Response {
 		facades.Log().Debug(err)
 		return response.ApiResponse(ctx, 500, category, "")
 	}
-	return response.ApiResponse(ctx, 201, category, "")
+	detailResponse := response.ToCategoryResponseDetail(category)
+	return response.ApiResponse(ctx, 201, detailResponse, "")
 }
 
 func (r *CategoryController) Update(ctx http.Context) http.Response {
+	validator, _ := ctx.Request().Validate(map[string]string{
+		"name": "required|max_len:50",
+	})
+	if validator.Fails() {
+		messages := validator.Errors().All()
+		return response.ApiResponse(ctx, 400, messages, "")
+	}
 	id := ctx.Request().Route("id")
 	var category models.Category
 	err := facades.Orm().Query().FindOrFail(&category, id)
